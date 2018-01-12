@@ -53,7 +53,20 @@ message GetJssdkSignResponse {
   string url = 6;
 }
 
+message GetDingUserInfoRequest {
+  string tmpAuthCode = 1;
+}
+message GetDingUserInfoResponse {
+  string maskedMobile = 1;
+  string nick = 2;
+  string unionid = 3;
+  string dingId = 4;
+  string openid = 5;
+  string snsToken = 6;
+}
+
 service DingDing {
   rpc SendMessage (SendDingMessageRequest) returns (SendDingMessageResponse);
   rpc GetJssdkSign (GetJssdkSignRequest) returns (GetJssdkSignResponse);
+  rpc GetDingUserInfo (GetDingUserInfoRequest) returns (GetDingUserInfoResponse);
 }

@@ -22,86 +22,88 @@ type JssdkResult struct {
   Ticket       string `json:"ticket"`
 }
 
+var ddJsapiTicketKey = "dd_jsapi_ticket_7200"
 var URL_TOKEN = "https://oapi.dingtalk.com/gettoken"
 var URL_TICKET = "https://oapi.dingtalk.com/get_jsapi_ticket"
+var jssdkSignLog = util.AppLog.With("file", "svc/jssdksign.go")
 
-func (s *DingDingService) GetJssdkSign(context context.Context, req *pb.GetJssdkSignRequest) (*pb.GetJssdkSignResponse, error) {
-  return nil, nil
+func init() {
+  //getDingJSTokenEveryHour()
 }
 
-func GetJssdkSign(urls string) map[string]string {
-  var log = util.AppLog.With("func", "GetJssdkSign")
-  //var appId = ding_appid
-  //var secret = ding_appsecret
-  var tokenMap = JssdkResult{}
-  var jsonTicket = JssdkResult{}
-  var noncestr = getRandomString(20, 3)
-  var timestamp = strconv.FormatInt(time.Now().Unix(), 10)
-  var sign = map[string]string{}
-
-  // 获取jsapiTicket从redis中7200秒，如果没有再请求
-  var wxJsapiTicketKey = "dd_jsapi_ticket_7200"
-  var wxTicket = ""
-  if redisCache.Exists(wxJsapiTicketKey).Val() > 0 {
-    wxTicket, _ = redisCache.Get(wxJsapiTicketKey).Result()
-  } else {
-    // 通过appid+secret获取accesstoken  https://oapi.dingtalk.com/gettoken?corpid=id&corpsecret=secrect
-    jsapiToken, err := get(URL_TOKEN + "?corpid=" + config.CORP_ID + "&corpsecret=" + config.CORP_SECRET)
-    if err != nil {
-      log.Errorf("gettoken err = %v", err)
-      return sign
-    }
-    err = json.Unmarshal(jsapiToken, &tokenMap)
-    if err != nil {
-      log.Errorf("Unmarshal jsapiToken", err)
-      return sign
-    }
-    if tokenMap.Access_token == "" {
-      log.Errorf("jsapiToken httpdo error")
-      return sign
-    }
-
-    // 通过access_token获取ticket https://oapi.dingtalk.com/get_jsapi_ticket?access_token=ACCESS_TOKE
-    jsapiTicket, err := get(URL_TICKET + "?access_token=" + tokenMap.Access_token)
-    if err != nil {
-      log.Errorf("get_jsapi_ticket err = %v", err)
-      return sign
-    }
-
-    err = json.Unmarshal(jsapiTicket, &jsonTicket)
-    if err != nil {
-      log.Errorf("Unmarshal jsapiTicket", err)
-      return sign
-    }
-    log.Debugf("unmarshal jsapiTicket = %v", string(jsapiTicket))
-
-    // 如果成功获取ticket保存到redis 7200秒，否则返回错误
-    if jsonTicket.Ticket != "" {
-      err = redisCache.Set(wxJsapiTicketKey, jsonTicket.Ticket, time.Second*7200).Err()
-      if err != nil {
-        log.Errorf("redisCache.Set(wxJsapiTicketKey, jsonTicket.Ticket, time.Second * 7200)", err)
-        return sign
-      }
-      wxTicket = jsonTicket.Ticket
-    } else {
-      log.Errorf("jsapiTicket httpdo error")
-      return sign
-    }
+func getDingJSTokenEveryHour() {
+  log := dingMsgLog.With("func", "getDingJSTokenEveryHour")
+  _, err := getJSTicket()
+  if err != nil {
+    log.Errorf("getJSTicket err = %v", err)
+    panic(err)
+    return
   }
 
-  // 通过获取的ticket计算签名"jsapi_ticket=" + jsTicket +"&noncestr=" + nonce +"&timestamp=" + timeStamp + "&url=" + url;
-  var sginstr = "jsapi_ticket=" + wxTicket + "&noncestr=" + noncestr + "&timestamp=" + timestamp + "&url=" + urls
+  timer := time.NewTicker(1 * time.Hour)
+  go func() {
+    for {
+      select {
+      case <-timer.C:
+        go func() {
+          _, err := getJSTicket()
+          if err != nil {
+            log.Errorf("getJSTicket err = %v", err)
+            panic(err)
+            return
+          }
+        }()
+      }
+    }
+  }()
+}
+
+func getJSTicket() (string, error) {
+  var log = jssdkSignLog.With("func", "getJSTicket")
+  var jsonTicket = JssdkResult{}
+  var ticket string
+  jsapiTicket, err := get(URL_TICKET + "?access_token=" + dingMessageAccessToken)
+  if err != nil {
+    log.Errorf("get = %v", err)
+    return ticket, err
+  }
+
+  err = json.Unmarshal(jsapiTicket, &jsonTicket)
+  if err != nil {
+    log.Errorf("json.Unmarshal err = %v", err)
+    return ticket, err
+  }
+  log.Debugf("unmarshal jsapiTicket = %v", string(jsapiTicket))
+
+  err = redisCache.Set(ddJsapiTicketKey, jsonTicket.Ticket, time.Second*3600).Err()
+  if err != nil {
+    log.Errorf("redisCache.Set err = %v", err)
+    return ticket, err
+  }
+  ticket = jsonTicket.Ticket
+  return ticket, nil
+}
+
+func (s *DingDingService) GetJssdkSign(context context.Context, req *pb.GetJssdkSignRequest) (*pb.GetJssdkSignResponse, error) {
+  var log = jssdkSignLog.With("func", "GetJssdkSign")
+  var noncestr = getRandomString(20, 3)
+  var timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+  var sign = &pb.GetJssdkSignResponse{}
+  var ddTicket string
+  ddTicket, _ = redisCache.Get(ddJsapiTicketKey).Result()
+
+  var sginstr = "jsapi_ticket=" + ddTicket + "&noncestr=" + noncestr + "&timestamp=" + timestamp + "&url=" + req.Url
   log.Infof("sginstr ", sginstr)
   signature := Js_sha1(sginstr)
-  sign["agentId"] = config.AGENT_ID
-  sign["corpId"] = config.CORP_ID
-  sign["nonceStr"] = noncestr
-  sign["timestamp"] = timestamp
-  sign["signature"] = signature
-  sign["url"] = urls
-  log.Infof("ddTicket=", wxTicket)
+  sign.AgentId = config.AGENT_ID
+  sign.CorpId = config.CORP_ID
+  sign.NonceStr = noncestr
+  sign.Timestamp = timestamp
+  sign.Signature = signature
+  sign.Url = req.Url
+  log.Infof("ddTicket=", ddTicket)
   log.Infof("sign=", sign)
-  return sign
+  return sign, nil
 }
 
 /**
