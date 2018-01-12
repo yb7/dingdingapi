@@ -28,7 +28,7 @@ var URL_TICKET = "https://oapi.dingtalk.com/get_jsapi_ticket"
 var jssdkSignLog = util.AppLog.With("file", "svc/jssdksign.go")
 
 func init() {
-  //getDingJSTokenEveryHour()
+  getDingJSTokenEveryHour()
 }
 
 func getDingJSTokenEveryHour() {
