@@ -1,5 +1,5 @@
-hash: 272b815afc05527019aa8a61cdfb9cc294cff698c398e34caff515380b549f04
-updated: 2018-01-05T23:55:00.497169+08:00
+hash: 74c866c5b1799df571bf278d2fd887a859fa9da0846b1df48f1a41f258e94275
+updated: 2018-01-25T20:49:54.465669+08:00
 imports:
 - name: github.com/denverdino/aliyungo
   version: cac644fbb1c76ee1f86f1466e04a0b0ffae691b6
@@ -8,7 +8,7 @@ imports:
   - sls
   - util
 - name: github.com/go-redis/redis
-  version: 73b70592cdaa9e6abdfcfbf97b4a90d80728c836
+  version: 4021ace05686f632ff17fd824bbed229fc474cf8
   subpackages:
   - internal
   - internal/consistenthash
@@ -19,6 +19,7 @@ imports:
   version: 18c9bb3261723cd5401db4d0c9fbc5c3b6c70fe8
   subpackages:
   - proto
+  - protoc-gen-go/descriptor
   - ptypes
   - ptypes/any
   - ptypes/duration
@@ -52,10 +53,11 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: e687fa4e6424368ece6e4fe727cea2c806a0fcb4
+  version: 6b51017f791ae1cfbec89c52efdf444b13b550ef
   repo: https://github.com/grpc/grpc-go
   subpackages:
   - balancer
+  - balancer/base
   - balancer/roundrobin
   - codes
   - connectivity
@@ -68,6 +70,8 @@ imports:
   - metadata
   - naming
   - peer
+  - reflection
+  - reflection/grpc_reflection_v1alpha
   - resolver
   - resolver/dns
   - resolver/passthrough

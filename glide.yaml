@@ -11,7 +11,7 @@ import:
   version: 88f656faf3f37f690df1a32515b479415e1a6769
   repo: https://github.com/golang/text.git
 - package: google.golang.org/grpc
-  version: ~1.8.2
+  version: ^1.9.2
   repo: https://github.com/grpc/grpc-go
 - package: google.golang.org/genproto
   repo: https://github.com/google/go-genproto

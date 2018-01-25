@@ -205,6 +205,8 @@ func (s *DingDingService) SendMessage(ctx context.Context, req *pbdingding.SendD
   var resp = &pbdingding.SendDingMessageResponse{}
   var m = make(map[string]dingSendMsgResp)
 
+  log.Debugf("send message response: %s", string(result))
+
   if err := json.Unmarshal(result, &m); err != nil {
     log.Error(err)
   } else {
