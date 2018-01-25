@@ -26,6 +26,7 @@ var (
   CORP_SECRET       string
   REDIS_ADDR        string
   REDIS_PWD         string
+  REDIS_KEY_PREFIX  string
 )
 
 const DING_HOST = "https://oapi.dingtalk.com/"
@@ -37,7 +38,6 @@ type RedisConfig struct {
   Addr     string
   Password string
 }
-
 
 func init() {
   APP_PORT = mustString("APP_PORT")
@@ -51,6 +51,7 @@ func init() {
   CORP_SECRET = mustString("CORP_SECRET")
   REDIS_ADDR = mustString("REDIS_ADDR")
   REDIS_PWD = mustString("REDIS_PWD")
+  REDIS_KEY_PREFIX = mustString("REDIS_KEY_PREFIX")
 }
 
 //var configFilePath = os.Getenv("CONFIG_FILE")

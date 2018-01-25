@@ -8,7 +8,7 @@ import (
   "net"
   "github.com/yb7/dingdingapi/config"
   "github.com/yb7/dingdingapi/util"
-  "github.com/yb7/dingdingapi/pb"
+  "github.com/yb7/dingdingapi/pbdingding"
 )
 
 var mainLog = util.AppLog.With("file", "main.go")
@@ -17,8 +17,10 @@ func main() {
   svc.OpenRedis()
   defer svc.CloseRedis()
 
+  svc.GetDingJSTokenEveryHour()
+
   grpcServer := grpc.NewServer()
-  pb.RegisterDingDingServer(grpcServer, &svc.DingDingService{})
+  pbdingding.RegisterDingDingServer(grpcServer, &svc.DingDingService{})
   // Register reflection service on gRPC server.
   reflection.Register(grpcServer)
 

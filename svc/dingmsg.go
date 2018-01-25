@@ -2,7 +2,7 @@ package svc
 
 import (
   "encoding/json"
-  "github.com/yb7/dingdingapi/pb"
+  "github.com/yb7/dingdingapi/pbdingding"
   "time"
   "fmt"
   "net/url"
@@ -36,7 +36,7 @@ import (
 //}
 
 var dingMsgLog = util.AppLog.With("file", "svc/dingmsg.go")
-func toBytes(p *pb.SendDingMessageRequest_Content) ([]byte, error) {
+func toBytes(p *pbdingding.SendDingMessageRequest_Content) ([]byte, error) {
   //dingLog.Debugf("MessageContent = %+v", *p)
   content, err := json.Marshal(p)
   if err != nil {
@@ -173,14 +173,16 @@ type DingDingService struct {
 }
 
 type dingSendMsgResp struct {
-  errCode int32 `json:"ding_open_errcode"`
-  errMsg  string `json:"error_msg"`
-  success  bool `json:"success"`
-  taskID  int32 `json:"task_id"`
+  result *struct {
+    errCode int32 `json:"ding_open_errcode"`
+    errMsg  string `json:"error_msg"`
+    success  bool `json:"success"`
+  }
+  requestId string `json:"request_id"`
 }
 // https://open-doc.dingtalk.com/docs/doc.htm?spm=a219a.7629140.0.0.ccmVn3&treeId=385&articleId=28915&docType=2
 // dingtalk.corp.message.corpconversation.asyncsend (企业会话消息异步发送)
-func (s *DingDingService) SendMessage(ctx context.Context, req *pb.SendDingMessageRequest) (*pb.SendDingMessageResponse, error) {
+func (s *DingDingService) SendMessage(ctx context.Context, req *pbdingding.SendDingMessageRequest) (*pbdingding.SendDingMessageResponse, error) {
   log := util.AppLog.With("func", "dingMessage")
 
   messageContent, err := toBytes(req.Content)
@@ -188,24 +190,30 @@ func (s *DingDingService) SendMessage(ctx context.Context, req *pb.SendDingMessa
     return nil, err
   }
 
-  mp := NewMessageParam(req.MsgType)
+  mp := NewMessageParam(req.Method)
   mp.UserIDList = strings.Join(req.Recipients, ",")
+
   mp.MsgContent = string(messageContent)
+  log.Debugf(mp.MsgContent)
   param := mp.FormEncoded()
+  log.Debugf(param)
 
   result, err := post(config.DING_MESSAGE_URL, []byte(param), false)
   if err != nil {
     return nil, err
   }
-  var resp = &pb.SendDingMessageResponse{}
-  var m = dingSendMsgResp{}
+  var resp = &pbdingding.SendDingMessageResponse{}
+  var m = make(map[string]dingSendMsgResp)
+
   if err := json.Unmarshal(result, &m); err != nil {
     log.Error(err)
   } else {
-    resp.DingOpenErrorCode = m.errCode
-    resp.ErrorMsg = m.errMsg
-    resp.Success = m.success
-    resp.TaskID = m.taskID
+    for _, v := range m {
+      resp.DingOpenErrorCode = v.result.errCode
+      resp.ErrorMsg = v.result.errMsg
+      resp.Success = v.result.success
+      resp.TaskID = 0 //v.requestId
+    }
   }
   log.Debugf("dingMessage result = %v", string(result))
 

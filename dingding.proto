@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package pb;
+package pbdingding;
 
 message SendDingMessageRequest {
   message Content {
@@ -32,6 +32,7 @@ message SendDingMessageRequest {
   Content content = 1;
   string msgType = 2;
   repeated string recipients = 3;
+  string method = 4;
 }
 
 message SendDingMessageResponse {

@@ -17,3 +17,8 @@
 vendor/
 run_dev.sh
 deploy
+deployment.yaml
+service.yaml
+build_linux.sh
+increment_version.sh
+dingdingapi

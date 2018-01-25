@@ -8,7 +8,7 @@ import (
   "strconv"
   "encoding/json"
   "golang.org/x/net/context"
-  "github.com/yb7/dingdingapi/pb"
+  "github.com/yb7/dingdingapi/pbdingding"
   "github.com/yb7/dingdingapi/config"
   "github.com/yb7/dingdingapi/util"
 )
@@ -22,16 +22,14 @@ type JssdkResult struct {
   Ticket       string `json:"ticket"`
 }
 
-var ddJsapiTicketKey = "dd_jsapi_ticket_7200"
+func ddJsapiTicketKey() string {
+  return fmt.Sprintf("%sdd_jsapi_ticket", config.REDIS_KEY_PREFIX)
+}
 var URL_TOKEN = "https://oapi.dingtalk.com/gettoken"
 var URL_TICKET = "https://oapi.dingtalk.com/get_jsapi_ticket"
 var jssdkSignLog = util.AppLog.With("file", "svc/jssdksign.go")
 
-func init() {
-  getDingJSTokenEveryHour()
-}
-
-func getDingJSTokenEveryHour() {
+func GetDingJSTokenEveryHour() {
   log := dingMsgLog.With("func", "getDingJSTokenEveryHour")
   _, err := getJSTicket()
   if err != nil {
@@ -75,7 +73,7 @@ func getJSTicket() (string, error) {
   }
   log.Debugf("unmarshal jsapiTicket = %v", string(jsapiTicket))
 
-  err = redisCache.Set(ddJsapiTicketKey, jsonTicket.Ticket, time.Second*3600).Err()
+  err = redisCache.Set(ddJsapiTicketKey(), jsonTicket.Ticket, time.Second*3600).Err()
   if err != nil {
     log.Errorf("redisCache.Set err = %v", err)
     return ticket, err
@@ -84,13 +82,13 @@ func getJSTicket() (string, error) {
   return ticket, nil
 }
 
-func (s *DingDingService) GetJssdkSign(context context.Context, req *pb.GetJssdkSignRequest) (*pb.GetJssdkSignResponse, error) {
+func (s *DingDingService) GetJssdkSign(context context.Context, req *pbdingding.GetJssdkSignRequest) (*pbdingding.GetJssdkSignResponse, error) {
   var log = jssdkSignLog.With("func", "GetJssdkSign")
   var noncestr = getRandomString(20, 3)
   var timestamp = strconv.FormatInt(time.Now().Unix(), 10)
-  var sign = &pb.GetJssdkSignResponse{}
+  var sign = &pbdingding.GetJssdkSignResponse{}
   var ddTicket string
-  ddTicket, _ = redisCache.Get(ddJsapiTicketKey).Result()
+  ddTicket, _ = redisCache.Get(ddJsapiTicketKey()).Result()
 
   var sginstr = "jsapi_ticket=" + ddTicket + "&noncestr=" + noncestr + "&timestamp=" + timestamp + "&url=" + req.Url
   log.Infof("sginstr ", sginstr)

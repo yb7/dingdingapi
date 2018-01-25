@@ -6,7 +6,7 @@ import (
   "github.com/yb7/dingdingapi/util"
   "fmt"
   "golang.org/x/net/context"
-  "github.com/yb7/dingdingapi/pb"
+  "github.com/yb7/dingdingapi/pbdingding"
 )
 
 const (
@@ -52,9 +52,9 @@ type (
   }
 )
 
-func (s *DingDingService) GetDingUserInfo(ctx context.Context, req *pb.GetDingUserInfoRequest) (*pb.GetDingUserInfoResponse, error) {
+func (s *DingDingService) GetDingUserInfo(ctx context.Context, req *pbdingding.GetDingUserInfoRequest) (*pbdingding.GetDingUserInfoResponse, error) {
   log := dingLoginLog.With("func", "GetDingUserByQRCode")
-  resp := &pb.GetDingUserInfoResponse{}
+  resp := &pbdingding.GetDingUserInfoResponse{}
 
   dingPersistentCodeResp, err := getDingPersistentCode(req.TmpAuthCode)
   if err != nil {
