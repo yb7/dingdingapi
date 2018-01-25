@@ -39,7 +39,8 @@ message SendDingMessageResponse {
   int32 dingOpenErrorCode = 1;
   string errorMsg = 2;
   bool success = 3;
-  int32 taskID = 4;
+  int64 taskID = 4;
+  string requestID = 5;
 }
 
 message GetJssdkSignRequest {

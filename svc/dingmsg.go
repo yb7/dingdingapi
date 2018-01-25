@@ -36,6 +36,7 @@ import (
 //}
 
 var dingMsgLog = util.AppLog.With("file", "svc/dingmsg.go")
+
 func toBytes(p *pbdingding.SendDingMessageRequest_Content) ([]byte, error) {
   //dingLog.Debugf("MessageContent = %+v", *p)
   content, err := json.Marshal(p)
@@ -56,6 +57,7 @@ type MessageParam struct {
   UserIDList string
   MsgContent string
 }
+
 var dingAccessToken string
 var dingMessageAccessToken string
 
@@ -103,6 +105,7 @@ func getDingAccessTokenEveryHour() {
     }
   }()
 }
+
 type DingRespErr struct {
   ErrCode int    `json:"errcode"`
   ErrMsg  string `json:"errmsg"`
@@ -111,6 +114,7 @@ type DingTokenResp struct {
   DingRespErr
   AccessToken string `json:"access_token"`
 }
+
 func getDingAccessToken(isLoginToken bool) (resp DingTokenResp, err error) {
   log := dingMsgLog.With("func", "getDingAccessToken")
   var requestUrl string
@@ -169,17 +173,18 @@ func (p *MessageParam) FormEncoded() string {
 }
 
 type DingDingService struct {
-
 }
 
-type dingSendMsgResp struct {
-  result *struct {
-    errCode int32 `json:"ding_open_errcode"`
-    errMsg  string `json:"error_msg"`
-    success  bool `json:"success"`
-  }
-  requestId string `json:"request_id"`
+type DingSendMsgResp struct {
+  Result *struct {
+    ErrCode int32  `json:"ding_open_errcode"`
+    ErrMsg  string `json:"error_msg"`
+    Success bool   `json:"success"`
+    TaskID  int64  `json:"task_id"`
+  } `json:"result"`
+  RequestId string `json:"request_id"`
 }
+
 // https://open-doc.dingtalk.com/docs/doc.htm?spm=a219a.7629140.0.0.ccmVn3&treeId=385&articleId=28915&docType=2
 // dingtalk.corp.message.corpconversation.asyncsend (企业会话消息异步发送)
 func (s *DingDingService) SendMessage(ctx context.Context, req *pbdingding.SendDingMessageRequest) (*pbdingding.SendDingMessageResponse, error) {
@@ -203,7 +208,7 @@ func (s *DingDingService) SendMessage(ctx context.Context, req *pbdingding.SendD
     return nil, err
   }
   var resp = &pbdingding.SendDingMessageResponse{}
-  var m = make(map[string]dingSendMsgResp)
+  var m = make(map[string]DingSendMsgResp)
 
   log.Debugf("send message response: %s", string(result))
 
@@ -211,13 +216,15 @@ func (s *DingDingService) SendMessage(ctx context.Context, req *pbdingding.SendD
     log.Error(err)
   } else {
     for _, v := range m {
-      resp.DingOpenErrorCode = v.result.errCode
-      resp.ErrorMsg = v.result.errMsg
-      resp.Success = v.result.success
-      resp.TaskID = 0 //v.requestId
+      if v.Result != nil {
+        resp.DingOpenErrorCode = v.Result.ErrCode
+        resp.ErrorMsg = v.Result.ErrMsg
+        resp.Success = v.Result.Success
+        resp.TaskID = v.Result.TaskID //v.requestId
+      }
+      resp.RequestID = v.RequestId
     }
   }
-  log.Debugf("dingMessage result = %v", string(result))
 
   return resp, nil
 }
