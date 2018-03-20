@@ -1,7 +1,6 @@
 package main
 
 import (
-  "fmt"
   "github.com/yb7/dingdingapi/svc"
   "google.golang.org/grpc"
   "google.golang.org/grpc/reflection"
@@ -13,7 +12,6 @@ import (
 
 var mainLog = util.AppLog.With("file", "main.go")
 func main() {
-  fmt.Println("bala")
   svc.OpenTokenCache()
   defer svc.CloseTokenCache()
 
