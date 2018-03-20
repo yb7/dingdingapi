@@ -14,8 +14,10 @@ import (
 var mainLog = util.AppLog.With("file", "main.go")
 func main() {
   fmt.Println("bala")
-  svc.OpenRedis()
-  defer svc.CloseRedis()
+  svc.OpenTokenCache()
+  defer svc.CloseTokenCache()
+
+  svc.GetDingAccessTokenEveryHour()
 
   svc.GetDingJSTokenEveryHour()
 

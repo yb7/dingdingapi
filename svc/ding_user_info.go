@@ -86,7 +86,7 @@ func (s *DingDingService) GetDingUserInfo(ctx context.Context, req *pbdingding.G
   nick := dingUserInfoResp.UserInfo.Nick
 
   //redis tokenCache
-  redisCache.Set(dingSNSTokenResp.SNSToken, nick, time.Hour*12)
+  TokenCache.Set(dingSNSTokenResp.SNSToken, nick, time.Hour*12)
 
   return resp, nil
 }

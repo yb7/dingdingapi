@@ -3,6 +3,7 @@ package config
 import (
   "fmt"
   "os"
+  "strings"
 )
 
 //type DingDingConfig struct {
@@ -18,7 +19,7 @@ var (
   APP_PORT          string
   LOG_PROJECT       string
   LOG_STORE         string
-  AUTH_REDIRECT_URL string
+  //AUTH_REDIRECT_URL string
   APP_ID            string
   AGENT_ID          string
   APP_SECRET        string
@@ -43,15 +44,15 @@ func init() {
   APP_PORT = mustString("APP_PORT")
   LOG_PROJECT = mustString("LOG_PROJECT")
   LOG_STORE = mustString("LOG_STORE")
-  AUTH_REDIRECT_URL = mustString("AUTH_REDIRECT_URL")
+  //AUTH_REDIRECT_URL = mustString("AUTH_REDIRECT_URL")
   APP_ID = mustString("APP_ID")
-  AGENT_ID = mustString("AGENT_ID")
+  AGENT_ID = notBlankString("AGENT_ID")
   APP_SECRET = mustString("APP_SECRET")
-  CORP_ID = mustString("CORP_ID")
-  CORP_SECRET = mustString("CORP_SECRET")
-  REDIS_ADDR = mustString("REDIS_ADDR")
-  REDIS_PWD = mustString("REDIS_PWD")
-  REDIS_KEY_PREFIX = mustString("REDIS_KEY_PREFIX")
+  CORP_ID = notBlankString("CORP_ID")
+  CORP_SECRET = notBlankString("CORP_SECRET")
+  REDIS_ADDR = notBlankString("REDIS_ADDR")
+  REDIS_PWD = notBlankString("REDIS_PWD")
+  REDIS_KEY_PREFIX = notBlankString("REDIS_KEY_PREFIX")
 }
 
 //var configFilePath = os.Getenv("CONFIG_FILE")
@@ -69,8 +70,13 @@ func init() {
 //AppLog = alilog.New(config.LOG_PROJECT, config.LOG_STORE)
 
 //
-func mustString(key string) string {
+
+func notBlankString(key string) string {
   var v = os.Getenv(key)
+  return strings.TrimSpace(v)
+}
+func mustString(key string) string {
+  var v = notBlankString(key)
   if len(v) == 0 {
     panic(fmt.Sprintf("missing env key %s", key))
   }

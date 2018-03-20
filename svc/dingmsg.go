@@ -61,25 +61,31 @@ type MessageParam struct {
 var dingAccessToken string
 var dingMessageAccessToken string
 
-func init() {
-  getDingAccessTokenEveryHour()
-}
-func getDingAccessTokenEveryHour() {
+func GetDingAccessTokenEveryHour() {
   log := dingMsgLog.With("func", "getDingAccessTokenEveryHour")
-  dtr, err := getDingAccessToken(true)
-  if err != nil {
-    panic(err)
-    return
-  }
-  //log.Infof("access_token = %v", dtr.AccessToken)
-  dingAccessToken = dtr.AccessToken
 
-  dtrMessage, err := getDingAccessToken(false)
-  if err != nil {
-    panic(err)
+  var getCorpAccessToken = func() {
+    if len(config.CORP_ID) > 0 && len(config.CORP_SECRET) > 0 {
+      dtrMessage, err := getDingAccessToken(false)
+      if err != nil {
+        log.Errorf("getDingAccessToken err %v", err)
+        return
+      }
+      dingMessageAccessToken = dtrMessage.AccessToken
+    }
   }
-  //log.Infof("message_access_token = %v", dtrMessage.AccessToken)
-  dingMessageAccessToken = dtrMessage.AccessToken
+  var GetDingAccessToken = func() {
+    dtr, err := getDingAccessToken(true)
+    if err != nil {
+      log.Warnf("ticker getDingAccessToken failed:%v", err)
+      return
+    }
+    dingAccessToken = dtr.AccessToken
+    log.Infof("DingAccessToken is %s", dingAccessToken)
+  }
+
+  GetDingAccessToken()
+  getCorpAccessToken()
 
   timer := time.NewTicker(1 * time.Hour)
   go func() {
@@ -87,19 +93,8 @@ func getDingAccessTokenEveryHour() {
       select {
       case <-timer.C:
         go func() {
-          dtr, err := getDingAccessToken(true)
-          if err != nil {
-            log.Warnf("ticker getDingAccessToken failed:%v", err)
-            return
-          }
-          dingAccessToken = dtr.AccessToken
-
-          dtrMessage, err := getDingAccessToken(false)
-          if err != nil {
-            log.Errorf("getDingAccessToken err %v", err)
-            return
-          }
-          dingMessageAccessToken = dtrMessage.AccessToken
+          GetDingAccessToken()
+          getCorpAccessToken()
         }()
       }
     }
@@ -115,6 +110,10 @@ type DingTokenResp struct {
   AccessToken string `json:"access_token"`
 }
 
+/**
+ * 使用appid及appSecret访问如下接口，获取accesstoken，此处获取的token有效期为2小时，
+ * 有效期内重复获取，返回相同值，并自动续期，如果在有效期外获取会获得新的token值，建议定时获取本token，不需要用户登录时再获取。
+ */
 func getDingAccessToken(isLoginToken bool) (resp DingTokenResp, err error) {
   log := dingMsgLog.With("func", "getDingAccessToken")
   var requestUrl string

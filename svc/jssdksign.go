@@ -11,6 +11,7 @@ import (
   "github.com/yb7/dingdingapi/pbdingding"
   "github.com/yb7/dingdingapi/config"
   "github.com/yb7/dingdingapi/util"
+  "errors"
 )
 
 // dingindg jssdk签名
@@ -29,8 +30,15 @@ var URL_TOKEN = "https://oapi.dingtalk.com/gettoken"
 var URL_TICKET = "https://oapi.dingtalk.com/get_jsapi_ticket"
 var jssdkSignLog = util.AppLog.With("file", "svc/jssdksign.go")
 
+/**
+ * https://open-doc.dingtalk.com/docs/doc.htm?spm=a219a.7629140.0.0.5kvQdT&treeId=385&articleId=104966&docType=1
+ */
 func GetDingJSTokenEveryHour() {
   log := dingMsgLog.With("func", "getDingJSTokenEveryHour")
+  if len(dingMessageAccessToken) == 0 {
+    log.Warnf("DingMessageAccessToken is blank, stop to get js token")
+    return
+  }
   _, err := getJSTicket()
   if err != nil {
     log.Errorf("getJSTicket err = %v", err)
@@ -73,7 +81,7 @@ func getJSTicket() (string, error) {
   }
   log.Debugf("unmarshal jsapiTicket = %v", string(jsapiTicket))
 
-  err = redisCache.Set(ddJsapiTicketKey(), jsonTicket.Ticket, time.Second*3600).Err()
+  err = TokenCache.Set(ddJsapiTicketKey(), jsonTicket.Ticket, time.Second*3600)
   if err != nil {
     log.Errorf("redisCache.Set err = %v", err)
     return ticket, err
@@ -83,12 +91,15 @@ func getJSTicket() (string, error) {
 }
 
 func (s *DingDingService) GetJssdkSign(context context.Context, req *pbdingding.GetJssdkSignRequest) (*pbdingding.GetJssdkSignResponse, error) {
+  if len(config.AGENT_ID) == 0 || len(config.CORP_ID) == 0 {
+    return nil, errors.New("missing config key AGENT_ID/CORP_ID")
+  }
   var log = jssdkSignLog.With("func", "GetJssdkSign")
   var noncestr = getRandomString(20, 3)
   var timestamp = strconv.FormatInt(time.Now().Unix(), 10)
   var sign = &pbdingding.GetJssdkSignResponse{}
   var ddTicket string
-  ddTicket, _ = redisCache.Get(ddJsapiTicketKey()).Result()
+  ddTicket, _ = TokenCache.Get(ddJsapiTicketKey())
 
   var sginstr = "jsapi_ticket=" + ddTicket + "&noncestr=" + noncestr + "&timestamp=" + timestamp + "&url=" + req.Url
   log.Infof("sginstr ", sginstr)
