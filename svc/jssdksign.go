@@ -35,7 +35,7 @@ var jssdkSignLog = util.AppLog.With("file", "svc/jssdksign.go")
  */
 func GetDingJSTokenEveryHour() {
   log := dingMsgLog.With("func", "getDingJSTokenEveryHour")
-  if len(dingMessageAccessToken) == 0 {
+  if len(corpAccessToken) == 0 {
     log.Warnf("DingMessageAccessToken is blank, stop to get js token")
     return
   }
@@ -68,7 +68,7 @@ func getJSTicket() (string, error) {
   var log = jssdkSignLog.With("func", "getJSTicket")
   var jsonTicket = JssdkResult{}
   var ticket string
-  jsapiTicket, err := get(URL_TICKET + "?access_token=" + dingMessageAccessToken)
+  jsapiTicket, err := get(URL_TICKET + "?access_token=" + corpAccessToken)
   if err != nil {
     log.Errorf("get = %v", err)
     return ticket, err
@@ -79,7 +79,7 @@ func getJSTicket() (string, error) {
     log.Errorf("json.Unmarshal err = %v", err)
     return ticket, err
   }
-  log.Debugf("unmarshal jsapiTicket = %v", string(jsapiTicket))
+  log.Debugf("jsapiTicket = %v", string(jsapiTicket))
 
   err = TokenCache.Set(ddJsapiTicketKey(), jsonTicket.Ticket, time.Second*3600)
   if err != nil {

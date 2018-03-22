@@ -92,7 +92,7 @@ func (s *DingDingService) GetDingUserInfo(ctx context.Context, req *pbdingding.G
 }
 
 func getDingPersistentCode(tmpAuthCode string) (resp DingPersistentCodeResp, err error) {
-  requestUrl := fmt.Sprintf(ding_host+"/sns/get_persistent_code?access_token=%s", dingAccessToken)
+  requestUrl := fmt.Sprintf(ding_host+"/sns/get_persistent_code?access_token=%s", appAccessToken)
   dpcr := DingPersistentCodeReq{TmpAuthCode: tmpAuthCode}
   reqBody, err := json.Marshal(dpcr)
   if err != nil {
@@ -119,7 +119,7 @@ func getDingPersistentCode(tmpAuthCode string) (resp DingPersistentCodeResp, err
 }
 
 func getDingSNSToken(dpcr DingPersistentCodeResp) (resp DingSNSTokenResp, err error) {
-  requestUrl := fmt.Sprintf(ding_host+"/sns/get_sns_token?access_token=%s", dingAccessToken)
+  requestUrl := fmt.Sprintf(ding_host+"/sns/get_sns_token?access_token=%s", appAccessToken)
   dstr := DingSNSTokenReq{OpenID: dpcr.OpenID, PersistentCode: dpcr.PersistentCode}
   reqBody, err := json.Marshal(dstr)
   if err != nil {

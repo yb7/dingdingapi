@@ -67,8 +67,31 @@ message GetDingUserInfoResponse {
   string snsToken = 6;
 }
 
+message Departments {
+  message Department {
+    int64 id = 1;
+    string name = 2;
+    int64 parentID = 3;
+  }
+  repeated Department departments = 1;
+}
+message GetDepartmentsRequest {
+}
+
+message GetUsersInDepartmentRequest {
+  int64 departmentID = 1;
+}
+message UsersInDepartment {
+  message User {
+    string userID = 1;
+    string name = 2;
+  }
+  repeated User users = 1;
+}
 service DingDing {
   rpc SendMessage (SendDingMessageRequest) returns (SendDingMessageResponse);
   rpc GetJssdkSign (GetJssdkSignRequest) returns (GetJssdkSignResponse);
   rpc GetDingUserInfo (GetDingUserInfoRequest) returns (GetDingUserInfoResponse);
+  rpc GetDepartments(GetDepartmentsRequest) returns (Departments);
+  rpc GetUsersInDepartment(GetUsersInDepartmentRequest) returns (UsersInDepartment);
 }

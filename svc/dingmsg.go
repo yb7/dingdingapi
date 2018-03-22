@@ -4,7 +4,6 @@ import (
   "encoding/json"
   "github.com/yb7/dingdingapi/pbdingding"
   "time"
-  "fmt"
   "net/url"
   "strings"
   "golang.org/x/net/context"
@@ -12,28 +11,6 @@ import (
   "github.com/yb7/dingdingapi/util"
 )
 
-//type MessageContent struct {
-//  Body struct {
-//    Author    string `json:"author"`
-//    Content   string `json:"content"`
-//    FileCount string `json:"file_count"`
-//    Form []struct {
-//      Key   string `json:"key"`
-//      Value string `json:"value"`
-//    } `json:"form"`
-//    Image string `json:"image"`
-//    Rich struct {
-//      Num  string `json:"num"`
-//      Unit string `json:"unit"`
-//    } `json:"rich"`
-//    Title string `json:"title"`
-//  } `json:"body"`
-//  Head struct {
-//    Bgcolor string `json:"bgcolor"`
-//    Text    string `json:"text"`
-//  } `json:"head"`
-//  MessageURL string `json:"message_url"`
-//}
 
 var dingMsgLog = util.AppLog.With("file", "svc/dingmsg.go")
 
@@ -58,48 +35,6 @@ type MessageParam struct {
   MsgContent string
 }
 
-var dingAccessToken string
-var dingMessageAccessToken string
-
-func GetDingAccessTokenEveryHour() {
-  log := dingMsgLog.With("func", "getDingAccessTokenEveryHour")
-
-  var getCorpAccessToken = func() {
-    if len(config.CORP_ID) > 0 && len(config.CORP_SECRET) > 0 {
-      dtrMessage, err := getDingAccessToken(false)
-      if err != nil {
-        log.Errorf("getDingAccessToken err %v", err)
-        return
-      }
-      dingMessageAccessToken = dtrMessage.AccessToken
-    }
-  }
-  var GetDingAccessToken = func() {
-    dtr, err := getDingAccessToken(true)
-    if err != nil {
-      log.Warnf("ticker getDingAccessToken failed:%v", err)
-      return
-    }
-    dingAccessToken = dtr.AccessToken
-    log.Infof("DingAccessToken is %s", dingAccessToken)
-  }
-
-  GetDingAccessToken()
-  getCorpAccessToken()
-
-  timer := time.NewTicker(1 * time.Hour)
-  go func() {
-    for {
-      select {
-      case <-timer.C:
-        go func() {
-          GetDingAccessToken()
-          getCorpAccessToken()
-        }()
-      }
-    }
-  }()
-}
 
 type DingRespErr struct {
   ErrCode int    `json:"errcode"`
@@ -110,45 +45,11 @@ type DingTokenResp struct {
   AccessToken string `json:"access_token"`
 }
 
-/**
- * 使用appid及appSecret访问如下接口，获取accesstoken，此处获取的token有效期为2小时，
- * 有效期内重复获取，返回相同值，并自动续期，如果在有效期外获取会获得新的token值，建议定时获取本token，不需要用户登录时再获取。
- */
-func getDingAccessToken(isLoginToken bool) (resp DingTokenResp, err error) {
-  log := dingMsgLog.With("func", "getDingAccessToken")
-  var requestUrl string
-  if isLoginToken == true {
-    requestUrl = fmt.Sprintf(config.DING_HOST+"sns/gettoken?appid=%s&appsecret=%s", config.APP_ID, config.APP_SECRET)
-  } else {
-    requestUrl = fmt.Sprintf(config.DING_HOST+"gettoken?corpid=%s&corpsecret=%s", config.CORP_ID, config.CORP_SECRET)
-  }
-
-  result, err := get(requestUrl)
-  if err != nil {
-    err = fmt.Errorf("get err %v", err)
-    log.Error(err)
-    return
-  }
-
-  err = json.Unmarshal(result, &resp)
-  if err != nil {
-    err = fmt.Errorf("Unmarshal err %v", err)
-    log.Error(err)
-    return
-  }
-  if resp.ErrCode != 0 && resp.ErrMsg != "ok" {
-    err = fmt.Errorf("ding err code: %v; ding err msg: %v", resp.ErrCode, resp.ErrMsg)
-    log.Error(err)
-    return
-  }
-
-  return
-}
 
 func NewMessageParam(dingMessageMethod string) *MessageParam {
   mp := new(MessageParam)
   mp.Method = dingMessageMethod
-  mp.Session = dingMessageAccessToken
+  mp.Session = corpAccessToken
   mp.TimesTamp = time.Now().Format("2006-01-02 15:04:05")
   mp.Format = "json"
   mp.V = "2.0"
