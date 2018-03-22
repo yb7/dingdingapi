@@ -7,6 +7,7 @@ import (
   "fmt"
   "golang.org/x/net/context"
   "github.com/yb7/dingdingapi/pbdingding"
+  "errors"
 )
 
 const (
@@ -38,6 +39,10 @@ type (
     DingRespErr
     UserInfo DingUserInfo `json:"user_info"`
   }
+  DingUserIdResp struct {
+    DingRespErr
+    UserID string
+  }
 
   DingUserInfo struct {
     MaskedMobile string `json:"maskedMobile"`
@@ -51,6 +56,24 @@ type (
     TmpAuthCode string `json:"tmp_auth_code"`
   }
 )
+
+func (*DingDingService) GetUserIdFromUnionId(ctx context.Context, req *pbdingding.UnionID) (*pbdingding.UserID, error) {
+  bytes, err := get(fmt.Sprintf("https://oapi.dingtalk.com/user/getUseridByUnionid?access_token=%s&unionid=%s", corpAccessToken, req.UnionID))
+  if err != nil {
+    return nil, err
+  }
+  var resp = DingUserIdResp{}
+  err = json.Unmarshal(bytes, &resp)
+  if err != nil {
+    return nil, err
+  }
+  if resp.ErrCode == 0 {
+    return &pbdingding.UserID{
+      UserID: resp.UserID,
+    }, nil
+  }
+  return nil, errors.New(resp.ErrMsg)
+}
 
 func (s *DingDingService) GetDingUserInfo(ctx context.Context, req *pbdingding.GetDingUserInfoRequest) (*pbdingding.GetDingUserInfoResponse, error) {
   log := dingLoginLog.With("func", "GetDingUserByQRCode")

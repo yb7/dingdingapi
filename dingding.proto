@@ -88,10 +88,17 @@ message UsersInDepartment {
   }
   repeated User users = 1;
 }
+message UnionID{
+  string unionID = 1;
+}
+message UserID {
+  string userID = 1;
+}
 service DingDing {
   rpc SendMessage (SendDingMessageRequest) returns (SendDingMessageResponse);
   rpc GetJssdkSign (GetJssdkSignRequest) returns (GetJssdkSignResponse);
   rpc GetDingUserInfo (GetDingUserInfoRequest) returns (GetDingUserInfoResponse);
   rpc GetDepartments(GetDepartmentsRequest) returns (Departments);
   rpc GetUsersInDepartment(GetUsersInDepartmentRequest) returns (UsersInDepartment);
+  rpc GetUserIdFromUnionId(UnionID) returns(UserID);
 }
