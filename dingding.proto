@@ -83,8 +83,12 @@ message GetUsersInDepartmentRequest {
 }
 message UsersInDepartment {
   message User {
-    string userID = 1;
-    string name = 2;
+    string userid = 1;
+    string unionid = 2;
+    string mobile = 3;
+    string name = 4;
+    bool active= 5;
+    repeated int32 department=6;
   }
   repeated User users = 1;
 }
