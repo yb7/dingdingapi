@@ -37,7 +37,7 @@ func (s *DingDingService) GetDepartments(ctx context.Context, req *pbdingding.Ge
 
 
 func (*DingDingService) GetUsersInDepartment(ctx context.Context, req *pbdingding.GetUsersInDepartmentRequest) (*pbdingding.UsersInDepartment, error) {
-  bytes, err := get(fmt.Sprintf("https://oapi.dingtalk.com/user/simplelist?access_token=%s&department_id=%d", corpAccessToken, req.DepartmentID))
+  bytes, err := get(fmt.Sprintf("https://oapi.dingtalk.com/user/list?access_token=%s&department_id=%d", corpAccessToken, req.DepartmentID))
   if err != nil {
     return nil, err
   }
