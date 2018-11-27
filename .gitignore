@@ -23,3 +23,5 @@ build_linux.sh
 increment_version.sh
 dingdingapi
 alilog-cfg.yaml
+huawei_build_linux.sh
+ali_build_linux.sh
