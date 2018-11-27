@@ -9,6 +9,7 @@ import (
   "golang.org/x/net/context"
   "github.com/yb7/dingdingapi/config"
   "github.com/yb7/dingdingapi/util"
+  "errors"
 )
 
 
@@ -96,10 +97,13 @@ func (s *DingDingService) SendMessage(ctx context.Context, req *pbdingding.SendD
   }
 
   mp := NewMessageParam(req.Method)
+  if len(req.Recipients) > 20 {
+    return nil, errors.New("Too many recipients, must less then 20.")
+  }
   mp.UserIDList = strings.Join(req.Recipients, ",")
 
   mp.MsgContent = string(messageContent)
-  log.Debugf(mp.MsgContent)
+  //log.Debugf(mp.MsgContent)
   param := mp.FormEncoded()
   //log.Debugf(param)
   log.Debugf("content of sendMessage api >>> \nmethod: %s, session: %s, timestamp: %s, format: %s, v: %s\nmsgtype: %s, userid_list: %s, agent_id: %s\nmsgcontent: %s",
