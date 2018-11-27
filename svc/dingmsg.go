@@ -101,7 +101,9 @@ func (s *DingDingService) SendMessage(ctx context.Context, req *pbdingding.SendD
   mp.MsgContent = string(messageContent)
   log.Debugf(mp.MsgContent)
   param := mp.FormEncoded()
-  log.Debugf(param)
+  //log.Debugf(param)
+  log.Debugf("content of sendMessage api >>> \nmethod: %s, session: %s, timestamp: %s, format: %s, v: %s\nmsgtype: %s, userid_list: %s, agent_id: %s\nmsgcontent: %s",
+    mp.Method, mp.Session, mp.TimesTamp, mp.Format, mp.V, mp.MsgType, mp.UserIDList, mp.AgentID, mp.MsgContent)
 
   result, err := post(config.DING_MESSAGE_URL, []byte(param), false)
   if err != nil {
